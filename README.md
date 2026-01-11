@@ -7,6 +7,11 @@
 ![Micro-ROS](https://img.shields.io/badge/Micro--ROS-Client-blue?style=for-the-badge)
 ![Nav2](https://img.shields.io/badge/Navigation_2-Stack-green?style=for-the-badge)
 
+<p align="center">
+  <img src="docs/robot_photo.jpg" width="45%" alt="ROS Baby Robot" />
+  <img src="docs/gui_screenshot.jpg" width="45%" alt="Web Control Panel" />
+</p>
+
 ## 📖 Overview
 
 This repository contains the complete source code for **"ROS Baby"**, an autonomous mecanum-drive robot designed for the **Robocon 2026** competition.
@@ -185,6 +190,46 @@ sudo udevadm control --reload-rules && sudo service udev restart
 ```
 
 ---
+
+## 🎮 Operating Modes
+
+### 1. Mapping Mode (SLAM)
+Use this mode to drive the robot manually and create a map of the arena.
+
+```bash
+# Terminal 1: Launch Robot & SLAM Toolbox
+ros2 launch my_robot_controller bringup.launch.py slam:=True
+```
+* **Drive:** Use the PS4 controller (handled by ESP32) to drive the robot.
+* **Save Map:** Once satisfied, save the map:
+```bash
+ros2 run nav2_map_server map_saver_cli -f src/my_robot_controller/config/map
+```
+
+### 2. Autonomous Mission Mode
+Use this mode for the competition run. It loads the saved map and starts the Nav2 Stack and Mission Controller.
+
+```bash
+# Terminal 1: Launch Robot, Nav2, & Mission Control
+ros2 launch my_robot_controller bringup.launch.py slam:=False
+```
+
+### 3. Triggering the Mission
+The robot initializes in STATE_IDLE. To start the autonomous "Pick and Place" routine, publish the trigger command:
+
+```bash
+# Terminal 2: Send Start Command
+ros2 topic pub /mission_trigger std_msgs/msg/String "data: 'start'" --once
+```
+
+---
+
+## 🖥️ Web Control Dashboard
+
+### The robot hosts a lightweight HTML5/JS dashboard for remote monitoring and debugging. This eliminates the need for heavyweight tools like RViz on the client machine.
+
+<p align="center"><img src="docs/gui_screenshot.jpg" width="800" /></p>
+
 
 ## 🧠 Key Nodes & Logic
 
