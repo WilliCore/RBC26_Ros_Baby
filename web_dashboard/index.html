@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Control Panel</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/easeljs@1/lib/easeljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/eventemitter2@6/lib/eventemitter2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/roslib@1/build/roslib.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ros2d@0.9.0/build/ros2d.min.js"></script>
+
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        /* HEADER */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 20px;
+            background-color: #333;
+            border-bottom: 2px solid #555;
+            flex-shrink: 0;
+        }
+
+        h1 { margin: 0; font-size: 18px; color: #ddd; }
+        
+        #status-indicator {
+            font-size: 12px;
+            font-weight: bold;
+            color: #ff4444; 
+        }
+
+        /* MAIN CONTENT - FLEXBOX ROW */
+        .main-container {
+            display: flex;
+            flex: 1;
+            gap: 15px;
+            padding: 15px;
+            overflow: hidden; 
+        }
+
+        /* VIDEO PANEL */
+        .video-panel {
+            flex: 1; 
+            display: flex;
+            flex-direction: column;
+            background-color: #000;
+            border: 1px solid #444;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* MAP PANEL */
+        .map-panel {
+            flex: 1;
+            background-color: #222;
+            border: 1px solid #444;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+	canvas {
+            image-rendering: pixelated;
+        }
+
+        /* DATA PANEL */
+        .data-panel {
+            width: 250px; /* Fixed width for data */
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: repeat(6, 1fr); 
+            gap: 10px;
+            overflow-y: auto;
+        }
+
+        /* CARDS */
+        .card {
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 5px;
+        }
+
+        .card-label {
+            font-size: 11px;
+            color: #aaa;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .card-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .unit { font-size: 10px; color: #888; }
+        .highlight { color: #4caf50; } 
+        .warning { color: #ff9800; }   
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>ROBOT MISSION CONTROL</h1>
+        <div id="status-indicator">OFFLINE</div>
+    </header>
+
+    <div class="main-container">
+        
+        <div class="video-panel">
+            <div style="position:absolute; top:5px; left:5px; background:rgba(0,0,0,0.5); padding:2px 5px; font-size:10px;">CAMERA</div>
+            <img id="video_feed" alt="Video Stream">
+        </div>
+
+        <div class="map-panel" id="map_container">
+            <div style="position:absolute; top:5px; left:5px; background:rgba(0,0,0,0.5); padding:2px 5px; font-size:10px; z-index:10;">NAV2 MAP</div>
+            </div>
+
+        <div class="data-panel">
+            <div class="card">
+                <span class="card-label">Heading</span>
+                <div><span id="head" class="card-value highlight">0</span> <span class="unit">°</span></div>
+            </div>
+            <div class="card">
+                <span class="card-label">ToF Dist</span>
+                <div><span id="tof" class="card-value warning">0</span> <span class="unit">mm</span></div>
+            </div>
+            <div class="card"><span class="card-label">M1 (FR)</span><span id="m1" class="card-value">0</span></div>
+            <div class="card"><span class="card-label">M2 (RR)</span><span id="m2" class="card-value">0</span></div>
+            <div class="card"><span class="card-label">M3 (RL)</span><span id="m3" class="card-value">0</span></div>
+            <div class="card"><span class="card-label">M4 (FL)</span><span id="m4" class="card-value">0</span></div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const ROBOT_IP = '192.168.1.168'; 
+
+        // 1. VIDEO
+        const videoImg = document.getElementById('video_feed');
+        videoImg.src = `http://${ROBOT_IP}:8080/stream?topic=/camera/debug&type=mjpeg&quality=50`;
+
+        // 2. ROS CONNECTION
+        var ros = new ROSLIB.Ros({ url : `ws://${ROBOT_IP}:9090` });
+        const statusLabel = document.getElementById('status-indicator');
+
+        ros.on('connection', function() {
+            statusLabel.innerText = "ONLINE";
+            statusLabel.style.color = "#4caf50";
+        });
+        ros.on('error', function(error) {
+            statusLabel.innerText = "ERROR";
+            statusLabel.style.color = "#ff4444";
+        });
+        ros.on('close', function() {
+            statusLabel.innerText = "DISCONNECTED";
+            statusLabel.style.color = "#ff4444";
+        });
+
+        // 3. ROBOT DATA SUBSCRIBER
+        var statusListener = new ROSLIB.Topic({
+            ros : ros,
+            name : '/robot_status',
+            messageType : 'std_msgs/Float32MultiArray'
+        });
+
+        statusListener.subscribe(function(message) {
+            if(message.data.length >= 6) {
+                document.getElementById("head").innerText = message.data[0].toFixed(1);
+                document.getElementById("tof").innerText  = message.data[1].toFixed(0);
+                document.getElementById("m1").innerText   = message.data[2].toFixed(0);
+                document.getElementById("m2").innerText   = message.data[3].toFixed(0);
+                document.getElementById("m3").innerText   = message.data[4].toFixed(0);
+                document.getElementById("m4").innerText   = message.data[5].toFixed(0);
+            }
+        });
+
+        // ==========================================================
+        //  MAP & LOCALIZATION VISUALIZATION
+        // ==========================================================
+        
+        // A. Create the Viewer (Canvas)
+        var mapContainer = document.getElementById('map_container');
+        var viewer = new ROS2D.Viewer({
+            divID : 'map_container',
+            width : mapContainer.offsetWidth,
+            height : mapContainer.offsetHeight,
+            background: '#222222'
+        });
+	// Disable smoothing to make the map sharp/pixelated
+        var canvasContext = viewer.scene.canvas.getContext('2d');
+        canvasContext.imageSmoothingEnabled = false;       // Standard
+        canvasContext.webkitImageSmoothingEnabled = false; // Safari/Old Chrome
+        canvasContext.mozImageSmoothingEnabled = false;    // Firefox
+
+        // B. Setup the Map Client
+        // [FIX] Removed 'rootObject: viewer.scene' to prevent infinite loop crash
+        var gridClient = new ROS2D.OccupancyGridClient({
+            ros : ros,
+            topic: '/map',
+            continuous: false 
+        });
+
+        // [FIX] Explicitly add the grid to the scene
+        viewer.scene.addChild(gridClient.rootObject);
+
+        // --- MAP CONFIGURATION ---
+        const VIEW_SIZE_METERS = 4.0; // Zoom level (smaller = closer)
+        const CENTER_X = 1.0;         // X Coordinate to center on
+        const CENTER_Y = 5.8;         // Y Coordinate to center on
+
+        // Scale and shift map when it loads
+        gridClient.on('change', function(){
+            console.log("Map Received!"); // Debug check
+
+            // 1. Zoom logic
+            var scale = mapContainer.offsetWidth / VIEW_SIZE_METERS;
+            viewer.scene.scaleX = scale;
+            viewer.scene.scaleY = scale;
+
+            // 2. Pan logic (Centering)
+            var centerX_pixels = (mapContainer.offsetWidth / 2);
+            var centerY_pixels = (mapContainer.offsetHeight / 2);
+
+            // Math to shift the map so (CENTER_X, CENTER_Y) is in the middle
+            viewer.scene.x = -(CENTER_X * scale) + centerX_pixels;
+            viewer.scene.y = (CENTER_Y * scale) + centerY_pixels; 
+        });
+
+	// C. Create the Robot Marker (Custom Red Triangle)
+        var robotMarker = new createjs.Shape();
+
+        // Draw a Smaller Red Triangle pointing "East"
+        robotMarker.graphics
+            .beginFill("#FF0000")       // Red Fill
+            .setStrokeStyle(0.02)       // Thin Black Border
+            .beginStroke("#000000")
+            // Smaller coordinates (in meters)
+            .moveTo(-0.10, -0.10)       // Back Left 
+            .lineTo(-0.10, 0.10)        // Back Right
+            .lineTo(0.15, 0.0)          // Front Tip (Nose)
+            .closePath();
+
+        robotMarker.visible = false; 
+        
+        // Add marker to the map
+        gridClient.rootObject.addChild(robotMarker);
+
+        // D. Subscribe to AMCL Pose (Localization)
+        var poseListener = new ROSLIB.Topic({
+            ros : ros,
+            name : '/amcl_pose',
+            messageType : 'geometry_msgs/PoseWithCovarianceStamped'
+        });
+
+        poseListener.subscribe(function(poseMsg) {
+            robotMarker.visible = true;
+            
+            // 1. Update Position
+            robotMarker.x = poseMsg.pose.pose.position.x;
+            robotMarker.y = -poseMsg.pose.pose.position.y; // Invert Y for ROS2D
+
+            // 2. Convert Quaternion to Degrees
+            var q = poseMsg.pose.pose.orientation;
+            var siny_cosp = 2 * (q.w * q.z + q.x * q.y);
+            var cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
+            var yaw = Math.atan2(siny_cosp, cosy_cosp);
+            
+            robotMarker.rotation = -yaw * (180.0 / Math.PI); 
+        });
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+             viewer.resize(mapContainer.offsetWidth, mapContainer.offsetHeight);
+        });
+
+    </script>
+
+</body>
+</html>
