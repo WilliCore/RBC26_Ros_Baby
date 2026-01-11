@@ -342,4 +342,4 @@ Manages recovery behaviors.
 ## 📜 License
 This project is licensed under the Apache 2.0 License.
 
-**Robocon 2026 Team**
+**Robocon 2026 Team** - S_WILLIAM
