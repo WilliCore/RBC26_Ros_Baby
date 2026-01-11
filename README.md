@@ -9,7 +9,6 @@
 
 <p align="center">
   <img src="docs/robot_photo.jpg" width="45%" alt="ROS Baby Robot" />
-  <img src="docs/gui_screenshot.jpg" width="45%" alt="Web Control Panel" />
 </p>
 
 ## 📖 Overview
@@ -226,10 +225,20 @@ ros2 topic pub /mission_trigger std_msgs/msg/String "data: 'start'" --once
 
 ## 🖥️ Web Control Dashboard
 
-### The robot hosts a lightweight HTML5/JS dashboard for remote monitoring and debugging. This eliminates the need for heavyweight tools like RViz on the client machine.
+The robot hosts a lightweight HTML5/JS dashboard for remote monitoring and debugging. This eliminates the need for heavyweight tools like RViz on the client machine.
 
-<p align="center"><img src="docs/gui_screenshot.jpg" width="800" /></p>
+<p align="center"><img src="docs/gui_screenshot.jpeg" width="800" /></p>
 
+### Features
+* **Live Camera Feed:** Low-latency MJPEG stream via `web_video_server`.
+* **Real-time Map:** Renders the Nav2 Costmap and AMCL pose using `ros2djs`.
+* **Telemetry:** Live display of Heading (IMU), ToF Distance, and Motor RPMs.
+* **Status Indicators:** Visual confirmation of connection state.
+
+### How to Use
+  1. Ensure `rosbridge_server` is running (Started automatically by `robot.launch.py`).
+  2. Open `gui/index.html` in any web browser on the same network.
+  3. Edit `const ROBOT_IP = '192.168.1.168';` in the HTML file to match your Raspberry Pi's IP.
 
 ## 🧠 Key Nodes & Logic
 
