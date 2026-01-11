@@ -9,7 +9,7 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     
     # --- HARDWARE CONFIG ---
-    lidar_serial_port = '/dev/ttyUSB0' 
+    lidar_serial_port = '/dev/ttyUSB1' 
     
     # 1. RPLIDAR Driver (Input: Real World -> Output: /scan)
     lidar_launch = IncludeLaunchDescription(
@@ -24,7 +24,6 @@ def generate_launch_description():
     )
 
     # 2. LASER FILTER (Input: /scan -> Output: /scan_filtered)
-    # This removes the wheels from the data PERMANENTLY.
     laser_filter_node = Node(
         package='laser_filters',
         executable='scan_to_scan_filter_chain',

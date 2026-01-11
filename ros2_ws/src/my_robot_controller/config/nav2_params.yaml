@@ -54,7 +54,7 @@ controller_server:
       beta: 0.3
       lambda: 1.0
       v_linear_min: 1.0
-      v_linear_max: 1.75
+      v_linear_max: 2.00
       v_angular_max: 0.35
       v_angular_min_in_place: 0.10
       slowdown_radius: 1.5
