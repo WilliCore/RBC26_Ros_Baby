@@ -96,7 +96,7 @@ float currentRPM_Motor1 = 0, currentRPM_Motor2 = 0, currentRPM_Motor3 = 0, curre
 float input_Vx = 0.0, input_Vy = 0.0, input_Wz = 0.0; 
 
 // Heading State
-float robotHeading = 0.0;    // Actual heading (corrected)
+float robotHeading = 0.0;    // Actual heading
 float targetHeading = 0.0;   // Desired heading
 float headingOffset = 0.0;   // Offset for "Reset Heading"
 float headingKp = 5;  
@@ -196,7 +196,7 @@ void UpdateAllServos() {
 
 void ProcessMotorFeedback(bool IsM3508, uint32_t CAN_ID, uint8_t RPM_H, uint8_t RPM_L) { 
   int16_t RPM_Raw = (RPM_H << 8) | RPM_L; 
-  float gearReduction = (IsM3508) ? 19.0f : 36.0f; // Simplified logic
+  float gearReduction = (IsM3508) ? 19.0f : 36.0f;
   float RPM_True = (float)RPM_Raw / gearReduction;
   
   if (CAN_ID == 0x201) currentRPM_Motor1 = RPM_True;
@@ -319,7 +319,7 @@ void StartPick() {
         Serial.println("STARTING PICK SEQUENCE...");
         currentSeqMode = SEQ_PICK;
         seqStep = 1;
-        seqTimer = millis() - 1000; // Trigger Step 1 immediately
+        seqTimer = millis() - 1000;
     }
 }
 
@@ -327,7 +327,7 @@ void StartPlace() {
     if (currentSeqMode == SEQ_NONE) {
         Serial.println("STARTING PLACE SEQUENCE...");
         currentSeqMode = SEQ_PLACE;
-        seqStep = 4; // Start at Step 4
+        seqStep = 4;
         seqTimer = millis() - 1000;
     }
 }
@@ -358,7 +358,7 @@ void RunPickSequence() {
             
             // End of Pick
             currentSeqMode = SEQ_NONE;
-            isGripperClosed = true; // State: Holding object
+            isGripperClosed = true;
             Serial.println("PICK: Complete");
             break;
     }
@@ -386,12 +386,12 @@ void RunPlaceSequence() {
             break;
         case 6: // Arm Up (Empty)
             servoAngles[0] = 135; servoAngles[1] = 5; servoAngles[2] = 150;
-            servoAngles[3] = 35; // Reset Gripper slightly
+            servoAngles[3] = 35; 
             UpdateAllServos();
             
             // End of Place
             currentSeqMode = SEQ_NONE;
-            isGripperClosed = false; // State: Empty
+            isGripperClosed = false;
             Serial.println("PLACE: Complete");
             break;
     }
@@ -416,7 +416,7 @@ void HandleArmInput() {
 
     // --- BUTTON SQUARE: EMERGENCY RESET ---
     else if (myController->x()) {
-        StartReset(); // [UPDATED] Uses the unified reset function
+        StartReset(); 
         inputDetected = true;
     }
 
