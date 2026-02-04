@@ -42,16 +42,16 @@ rclc_support_t support;
 rcl_node_t node;
 rcl_publisher_t publisher;
 std_msgs__msg__Float32MultiArray sensor_msg;
-float sensor_data_buffer[6]; // Heading, ToF, 4x RPM
+float sensor_data_buffer[6];
 
 // --- CALLBACK ---
 void vel_callback(const void * msgin) {
   const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
 
   // 1. Prepare Data
-  txData.vx = msg->linear.x * 100.0; // Scale m/s to motor units
+  txData.vx = msg->linear.x * 100.0; 
   txData.vy = msg->linear.y * 100.0;
-  txData.wz = msg->angular.z * 5.0;  // Scale rotation
+  txData.wz = msg->angular.z * 5.0; 
 
   // 2. Send via I2C
   Wire.beginTransmission(SLAVE_ADDR);
@@ -95,7 +95,6 @@ void setup() {
     "/robot_status"
   );
 
-  // Allocate memory for the message
   sensor_msg.data.capacity = 6;
   sensor_msg.data.size = 6;
   sensor_msg.data.data = sensor_data_buffer;
