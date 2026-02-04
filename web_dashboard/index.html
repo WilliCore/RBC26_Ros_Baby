@@ -86,7 +86,7 @@
 
         /* DATA PANEL */
         .data-panel {
-            width: 250px; /* Fixed width for data */
+            width: 250px;
             display: grid;
             grid-template-columns: 1fr;
             grid-template-rows: repeat(6, 1fr); 
@@ -214,21 +214,19 @@
             height : mapContainer.offsetHeight,
             background: '#222222'
         });
-	// Disable smoothing to make the map sharp/pixelated
+		// Disable smoothing to make the map sharp/pixelated
         var canvasContext = viewer.scene.canvas.getContext('2d');
         canvasContext.imageSmoothingEnabled = false;       // Standard
         canvasContext.webkitImageSmoothingEnabled = false; // Safari/Old Chrome
         canvasContext.mozImageSmoothingEnabled = false;    // Firefox
 
         // B. Setup the Map Client
-        // [FIX] Removed 'rootObject: viewer.scene' to prevent infinite loop crash
         var gridClient = new ROS2D.OccupancyGridClient({
             ros : ros,
             topic: '/map',
             continuous: false 
         });
 
-        // [FIX] Explicitly add the grid to the scene
         viewer.scene.addChild(gridClient.rootObject);
 
         // --- MAP CONFIGURATION ---
@@ -238,7 +236,7 @@
 
         // Scale and shift map when it loads
         gridClient.on('change', function(){
-            console.log("Map Received!"); // Debug check
+            console.log("Map Received!"); 
 
             // 1. Zoom logic
             var scale = mapContainer.offsetWidth / VIEW_SIZE_METERS;
@@ -259,13 +257,12 @@
 
         // Draw a Smaller Red Triangle pointing "East"
         robotMarker.graphics
-            .beginFill("#FF0000")       // Red Fill
-            .setStrokeStyle(0.02)       // Thin Black Border
+            .beginFill("#FF0000")      
+            .setStrokeStyle(0.02)      
             .beginStroke("#000000")
-            // Smaller coordinates (in meters)
-            .moveTo(-0.10, -0.10)       // Back Left 
-            .lineTo(-0.10, 0.10)        // Back Right
-            .lineTo(0.15, 0.0)          // Front Tip (Nose)
+            .moveTo(-0.10, -0.10)    
+            .lineTo(-0.10, 0.10)   
+            .lineTo(0.15, 0.0)     
             .closePath();
 
         robotMarker.visible = false; 
